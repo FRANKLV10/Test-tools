@@ -1,6 +1,7 @@
 from typing import List
 
 import pandas as pd
+import numpy as np
 import os
 
 
@@ -15,38 +16,51 @@ class Compare_Excel:
         if file_path is None:
             file_path = list()
         self.file_path = file_path
-        self.excel_origin = ''
-        self.excel_new = ''
+        self.origin = ''
+        self.new = ''
 
     def _compare_dif_excel(self):
+        """
+        比较不同excel
+        """
 
-        self.excel_origin = pd.read_excel(self.file_path[0])
-        self.excel_new = pd.read_excel(self.file_path[1])
-        result = self.excel_origin.compare(other=self.excel_new, keep_shape=True, keep_equal=True)
-        if len(result.values) == 0:
-            print('表格没有不同')
-        else:
-            print(result.head())
+        self.origin = pd.read_excel(self.file_path[0])
+        self.new = pd.read_excel(self.file_path[1])
+        self._cmp()
 
     def _compare_dif_sheet(self):
-        self.excel_origin = pd.ExcelFile(self.file_path[0])
-        sheet_names = self.excel_origin.sheet_names
+        """
+        比较同一个excel 不同sheet
+        """
+        excel = pd.ExcelFile(self.file_path[0])
+        sheet_names = excel.sheet_names
+        self.origin = pd.read_excel(self.file_path[0], sheet_name=sheet_names[0])
 
-        base_sheet = pd.read_excel(self.file_path[0], sheet_name=sheet_names[0])
         for i in range(1, len(sheet_names)):
-            other = pd.read_excel(self.file_path[0], sheet_name=sheet_names[i])
-            result = base_sheet.compare(other=other, keep_shape=False, keep_equal=True)
-            print(result)
+            self.new = pd.read_excel(self.file_path[0], sheet_name=sheet_names[i])
+            self._cmp()
 
-    def cmp_file(self):
+    def _cmp(self):
+        try:
+            result = self.origin.compare(other=self.new, keep_shape=False, keep_equal=True)
+            return result
+        except ValueError:
+            return "表格有增删"
+
+    def choose_compare_type(self):
         if len(self.file_path) == 2:
             self._compare_dif_excel()
         elif len(self.file_path) == 1:
             self._compare_dif_sheet()
         else:
-            raise Exception('请输入正确')
+            return '请输入正确路径'
+
+    def change_result(self):
+        cmp_result = self.choose_compare_type()
+        print(cmp_result)
 
 
 if __name__ == '__main__':
     a = Compare_Excel(file_path=['1.xlsx'])
-    a.cmp_file()
+    print(a.choose_compare_type())
+
