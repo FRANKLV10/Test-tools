@@ -18,6 +18,7 @@ class Compare_Excel:
         self.file_path = file_path
         self.origin = ''
         self.new = ''
+        self.result = None
 
     def _compare_dif_excel(self):
         """
@@ -26,6 +27,7 @@ class Compare_Excel:
 
         self.origin = pd.read_excel(self.file_path[0])
         self.new = pd.read_excel(self.file_path[1])
+
         self._cmp()
 
     def _compare_dif_sheet(self):
@@ -42,25 +44,50 @@ class Compare_Excel:
 
     def _cmp(self):
         try:
-            result = self.origin.compare(other=self.new, keep_shape=False, keep_equal=True)
-            return result
+            self.result = self.origin.compare(other=self.new, keep_shape=False, keep_equal=True)
         except ValueError:
-            return "表格有增删"
+            return "表格有增改"
 
     def choose_compare_type(self):
+        """
+        1.两个文件路径对比不同excel
+        2一个文件路径对比同一个excel中的不同sheet
+        """
         if len(self.file_path) == 2:
-            self._compare_dif_excel()
+            return self._compare_dif_excel()
         elif len(self.file_path) == 1:
-            self._compare_dif_sheet()
+            return self._compare_dif_sheet()
         else:
             return '请输入正确路径'
 
     def change_result(self):
-        cmp_result = self.choose_compare_type()
-        print(cmp_result)
+        self.choose_compare_type()
+
+        if self.result.empty:
+            return 0
+        else:
+            self.print_dif()
+
+    def print_dif(self):
+
+        index = self.result.axes[0]
+        keys = self.result.columns.tolist()
+
+        values = self.result.values
+
+        for i in range(len(index)):
+            value = np.array_split(values[i], 2)
+            key = np.array_split(keys, 2)
+            index_num = index[i] + 2
+
+            for j in range(int(len(keys) / 2)):
+                filed_name = key[j][0][0]
+                value_old = value[j][0]
+                value_new = value[j][1]
+                if value_old != value_new:
+                    print("第{}行，{}字段值做过修改，原来的值为{}，现在的值为{}".format(index_num, filed_name, value_old, value_new))
 
 
 if __name__ == '__main__':
-    a = Compare_Excel(file_path=['1.xlsx'])
-    print(a.choose_compare_type())
-
+    a = Compare_Excel(file_path=['1.xlsx', '2.xlsx'])
+    print(a.change_result())
