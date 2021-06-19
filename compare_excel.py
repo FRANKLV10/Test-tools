@@ -34,19 +34,23 @@ class Compare_Excel:
         """
         比较同一个excel 不同sheet
         """
+
         excel = pd.ExcelFile(self.file_path[0])
         sheet_names = excel.sheet_names
-        self.origin = pd.read_excel(self.file_path[0], sheet_name=sheet_names[0])
+        if len(sheet_names) < 2:
+            self.result = "表格没有多余sheet"
+        else:
+            self.origin = pd.read_excel(self.file_path[0], sheet_name=sheet_names[0])
 
-        for i in range(1, len(sheet_names)):
-            self.new = pd.read_excel(self.file_path[0], sheet_name=sheet_names[i])
-            self._cmp()
+            for i in range(1, len(sheet_names)):
+                self.new = pd.read_excel(self.file_path[0], sheet_name=sheet_names[i])
+                self._cmp()
 
     def _cmp(self):
         try:
             self.result = self.origin.compare(other=self.new, keep_shape=False, keep_equal=True)
         except ValueError:
-            return "表格有增改"
+            self.result = '表格有改动'
 
     def choose_compare_type(self):
         """
@@ -58,18 +62,23 @@ class Compare_Excel:
         elif len(self.file_path) == 1:
             return self._compare_dif_sheet()
         else:
-            return '请输入正确路径'
+            self.result = "请输入正确路径"
 
     def change_result(self):
         self.choose_compare_type()
 
+        if isinstance(self.result, str):
+            print(self.result)
+            return
         if self.result.empty:
             return 0
+
         else:
-            self.print_dif()
+            return self.result
 
     def print_dif(self):
-
+        if isinstance(self.result, str):
+            return self.result
         index = self.result.axes[0]
         keys = self.result.columns.tolist()
 
@@ -85,9 +94,30 @@ class Compare_Excel:
                 value_old = value[j][0]
                 value_new = value[j][1]
                 if value_old != value_new:
-                    print("第{}行，{}字段值做过修改，原来的值为{}，现在的值为{}".format(index_num, filed_name, value_old, value_new))
+                    msg = "第{}行，{}字段值做过修改，原来的值为{}，现在的值为{}".format(index_num, filed_name, value_old, value_new)
+                    print(msg)
+
+
+def get_excel_file(path):
+    file_names = os.listdir(path)
+    excel_names = [file_name for file_name in file_names if file_name.endswith('.xlsx')]
+    return excel_names
+
+
+def main(path):
+    excel_names = get_excel_file(path)
+    excel_name = iter(excel_names)
+    while True:
+        try:
+            a = Compare_Excel(file_path=[next(excel_name)])
+            a.change_result()
+            a.print_dif()
+        except StopIteration:
+            break
 
 
 if __name__ == '__main__':
-    a = Compare_Excel(file_path=['1.xlsx', '2.xlsx'])
-    print(a.change_result())
+    # a = Compare_Excel(file_path=['1.xlsx', '2.xlsx'])
+    # a.change_result()
+    # a.print_dif()
+    main('./')
