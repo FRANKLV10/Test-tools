@@ -19,6 +19,7 @@ class Compare_Excel:
         self.origin = ''
         self.new = ''
         self.result = None
+        self.result_json = {}
 
     def _compare_dif_excel(self):
         """
@@ -81,21 +82,27 @@ class Compare_Excel:
             return self.result
         index = self.result.axes[0]
         keys = self.result.columns.tolist()
-
         values = self.result.values
-
+        print(self.result.to_json(orient='split', force_ascii=False))
         for i in range(len(index)):
             value = np.array_split(values[i], 2)
             key = np.array_split(keys, 2)
             index_num = index[i] + 2
-
+            self.result_json[index[i]] = []
             for j in range(int(len(keys) / 2)):
                 filed_name = key[j][0][0]
                 value_old = value[j][0]
                 value_new = value[j][1]
+
                 if value_old != value_new:
                     msg = "第{}行，{}字段值做过修改，原来的值为{}，现在的值为{}".format(index_num, filed_name, value_old, value_new)
                     print(msg)
+                self.result_json[index[i]].append(filed_name)
+        # print(self.result_json)
+
+    def revert_json(self):
+        print(self.result.to_json(force_ascii=False))
+        print(self.result.to_html('1.html'))
 
 
 def get_excel_file(path):
@@ -117,7 +124,8 @@ def main(path):
 
 
 if __name__ == '__main__':
-    # a = Compare_Excel(file_path=['1.xlsx', '2.xlsx'])
-    # a.change_result()
-    # a.print_dif()
-    main('./')
+    a = Compare_Excel(file_path=['1.xlsx', '2.xlsx'])
+    a.change_result()
+    a.print_dif()
+    # main('./')
+    # a.revert_json()
