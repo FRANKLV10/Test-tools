@@ -19,8 +19,9 @@ class Compare_Excel:
         self.origin = ''
         self.new = ''
         self.result = None
-        self.result_json = {}
-
+        self.dif_json = {}
+        self.keep_shape = False
+        self.keep_equal = True
     def _compare_dif_excel(self):
         """
         比较不同excel
@@ -77,19 +78,19 @@ class Compare_Excel:
         else:
             return self.result
 
-    def print_dif(self):
+    def get_dif(self):
         if isinstance(self.result, str):
             return self.result
         index = self.result.axes[0]
         keys = self.result.columns.tolist()
         values = self.result.values
-        print(self.result.to_json(orient='split', force_ascii=False))
+        count_len = int(len(values[0]) / 2)
         for i in range(len(index)):
-            value = np.array_split(values[i], 2)
-            key = np.array_split(keys, 2)
+            value = np.array_split(values[i], count_len)
+            key = np.array_split(keys, count_len)
             index_num = index[i] + 2
-            self.result_json[index[i]] = []
-            for j in range(int(len(keys) / 2)):
+            self.dif_json[int(index[i])] = []
+            for j in range(count_len):
                 filed_name = key[j][0][0]
                 value_old = value[j][0]
                 value_new = value[j][1]
@@ -97,12 +98,15 @@ class Compare_Excel:
                 if value_old != value_new:
                     msg = "第{}行，{}字段值做过修改，原来的值为{}，现在的值为{}".format(index_num, filed_name, value_old, value_new)
                     print(msg)
-                self.result_json[index[i]].append(filed_name)
-        # print(self.result_json)
+                self.dif_json[index[i]].append(filed_name)
+        self.result = self.dif_json
+        print(self.result)
 
     def revert_json(self):
-        print(self.result.to_json(force_ascii=False))
-        print(self.result.to_html('1.html'))
+        old = self.origin.to_json(force_ascii=False, orient='split')
+        new = self.new.to_json(force_ascii=False, orient='split')
+        data = {'old': self.origin.to_json(force_ascii=False, orient='split'), 'new': new, 'dif': self.dif_json}
+        return data
 
 
 def get_excel_file(path):
@@ -111,21 +115,24 @@ def get_excel_file(path):
     return excel_names
 
 
-def main(path):
-    excel_names = get_excel_file(path)
-    excel_name = iter(excel_names)
+def main(old_path, new_path):
+    new_excel_names = get_excel_file(old_path)
+    old_excel_names = get_excel_file(new_path)
+    excel_name = iter(new_excel_names)
+
     while True:
         try:
-            a = Compare_Excel(file_path=[next(excel_name)])
-            a.change_result()
-            a.print_dif()
+            cmp = Compare_Excel(file_path=[next(excel_name)])
+            cmp.change_result()
+            cmp.print_dif()
         except StopIteration:
             break
 
 
 if __name__ == '__main__':
-    a = Compare_Excel(file_path=['1.xlsx', '2.xlsx'])
+    a = Compare_Excel(file_path=['achievement.xlsx', '1111.xlsx'])
     a.change_result()
-    a.print_dif()
+    a.get_dif()
+    # print(a.change_result())
     # main('./')
-    # a.revert_json()
+    # print(a.revert_json())
