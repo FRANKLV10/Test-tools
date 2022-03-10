@@ -22,6 +22,7 @@ class Compare_Excel:
         self.dif_json = {}
         self.keep_shape = False
         self.keep_equal = True
+
     def _compare_dif_excel(self):
         """
         比较不同excel
@@ -76,11 +77,10 @@ class Compare_Excel:
             return 0
 
         else:
-            return self.result
+            self._get_dif()
 
-    def get_dif(self):
-        if isinstance(self.result, str):
-            return self.result
+    def _get_dif(self):
+
         index = self.result.axes[0]
         keys = self.result.columns.tolist()
         values = self.result.values
@@ -130,9 +130,9 @@ def main(old_path, new_path):
 
 
 if __name__ == '__main__':
-    a = Compare_Excel(file_path=['achievement.xlsx', '1111.xlsx'])
+    a = Compare_Excel(file_path=['1111.xlsx', '1111.xlsx'])
     a.change_result()
-    a.get_dif()
+    a.change_result()
     # print(a.change_result())
     # main('./')
     # print(a.revert_json())
